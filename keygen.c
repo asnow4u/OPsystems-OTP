@@ -63,11 +63,11 @@ int main (int argc, char* argv[]){
     *********************/
 
     if (argc > 2){
-        perror("Error: To many arguments\n");
+        fprintf(stderr, "Error: To many arguments\n");
         exit(1);
 
     } else if (argc < 2){
-        perror("Error: Need a specified key length\n");
+        fprintf(stderr, "Error: Need a specified key length\n");
         exit(1);
     
     } else {

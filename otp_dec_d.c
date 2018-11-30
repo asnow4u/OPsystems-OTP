@@ -72,8 +72,8 @@ char decription(char ctext, char ckey){
 
     i -= j;
 
-    if (i <= 0) {
-        i += 26;
+    if (i < 0) {
+        i += 27;
     }
 
     switch(i){
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]){
 
     //Check arguments
     if (argc < 2 || argc > 2){
-        error("ERROR: Not Propper Amount Of Arguments\n");
+        fprintf(stderr, "ERROR: Not Propper Amount Of Arguments\n");
 
     } else {
 
@@ -153,15 +153,17 @@ int main(int argc, char* argv[]){
         
         //Check Socket
         if (sock < 0){
-            error("ERROR: Unable To Open Socket\n");
+            fprintf(stderr, "ERROR: Unable To Open Socket\n");
         }
         
         //Check Bind
         if (bind(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0){
-            error("ERROR: Unable To Bind\n");
+            fprintf(stderr, "ERROR: Unable To Bind\n");
         }
 
         listen(sock, 5);
+
+        while(1){
 
         //Accept Connection
         sizeOfClientInfo = sizeof(clientAddress);
@@ -169,7 +171,7 @@ int main(int argc, char* argv[]){
 
         //Check Accept
         if (connection < 0){
-            error("ERROR: Unable To Connect\n");
+            fprintf(stderr, "ERROR: Unable To Connect\n");
         }
 
         /********************************
@@ -197,7 +199,7 @@ int main(int argc, char* argv[]){
             charsRead = recv(connection, buffer, sizeof(buffer), 0);
 
             if (charsRead < 0){
-                error("ERROR: Unable To Read From The Socket\n");
+                fprintf(stderr, "ERROR: Unable To Read From The Socket\n");
             }
 
             text = strtok(buffer, "\n");
@@ -283,6 +285,7 @@ int main(int argc, char* argv[]){
              * ***************/
 
             waitpid(child, NULL, 0);
+        }
         }
     }
     

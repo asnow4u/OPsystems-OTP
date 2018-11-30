@@ -23,11 +23,12 @@ int main(int argc, char* argv[]){
     int charsWritten;
     int charRead;
     int i = 0;
+    int textSize;
     struct sockaddr_in serverAddress;
     struct hostent* serverHostInfo;
     char arg[256];
     char buffer[256];
-    char text[300];
+    char *text;
     FILE *textFile;
 
 
@@ -44,6 +45,11 @@ int main(int argc, char* argv[]){
             fprintf(stderr, "ERROR: File Does Not Exist");
             exit(1);
         }
+
+        fseek(textFile, 0L, SEEK_END);
+        textSize = ftell(textFile);
+        rewind(textFile);
+        text = malloc(textSize +1);
 
         fgets(text, sizeof(text), textFile);
 
@@ -96,15 +102,18 @@ int main(int argc, char* argv[]){
 
 
         //Recv Encripted Message From Server
-        memset(buffer, '\0', sizeof(buffer));
-        charRead = recv(sock, buffer, sizeof(buffer), 0);
+        memset(text, '\0', textSize * sizeof(char));
+        charRead = recv(sock, text, sizeof(buffer), 0);
 
         if (charRead < 0){
             fprintf(stderr, "Nothing Recieved From Server\n");
         }
 
-        printf("%s\n", buffer);
-
+        i = 0;    
+        while (i < textSize -1){
+            printf("%c", text[i]);
+            i++;
+        }
     }
 
     close(sock);
