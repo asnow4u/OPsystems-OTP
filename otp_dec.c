@@ -16,6 +16,10 @@
 #include <ctype.h>
 
 
+/***************************
+ * Client Main
+ * ************************/
+
 int main(int argc, char* argv[]){
 
     int sock;
@@ -27,9 +31,9 @@ int main(int argc, char* argv[]){
     long int keySize;
     struct sockaddr_in serverAddress;
     struct hostent* serverHostInfo;
-    char arg[80000];
-    char text[80000];
-    char key[80000];
+    char arg[200000];
+    char text[100000];
+    char key[100000];
     FILE *textFile;
     FILE *keyFile;
 
@@ -40,18 +44,20 @@ int main(int argc, char* argv[]){
     
     } else {
         
-        //Check for bad characters
+        //Check file
         textFile = fopen(argv[1], "r");
 
         if (textFile == NULL){
             fprintf(stderr, "ERROR: File Does Not Exist");
             exit(1);
         }
-
+        
+        //Get size of file
         fseek(textFile, 0L, SEEK_END);
         textSize = ftell(textFile);
         rewind(textFile);
 
+        //Grab characters from file
         fgets(text, textSize, textFile); 
         
         //Check for bad characters
@@ -73,15 +79,13 @@ int main(int argc, char* argv[]){
             exit(1);
         }
 
+        //Get Key File Size
         fseek(keyFile, 0L, SEEK_END);
         keySize = ftell(keyFile);
         rewind(keyFile);
 
+        //Get Key File Chars
         fgets(key, keySize, keyFile);
-
-        //test
-        //printf("text: %s\n", text);
-        //printf("key: %s\n", key);
 
         //Check if keysize is shorter than text
         if (textSize > keySize -1){
@@ -98,9 +102,8 @@ int main(int argc, char* argv[]){
         strcat(arg, key);
         strcat(arg, "\ndec");
 
-        //test
-        //printf("arg: %s", arg);
 
+        
         /**********************
          *Set Up Connection To Server
          * *******************/
@@ -125,25 +128,25 @@ int main(int argc, char* argv[]){
 
         //Send Argument To Server
         charsWritten = send(sock, arg, strlen(arg), 0);
-
+    
         if (charsWritten < 0){
             fprintf(stderr, "Unable To Write To Server\n");
         }
 
-
-
         //Recv Encripted Message From Server
-        memset(text, '\0', sizeof(text));
-        charRead = recv(sock, text, sizeof(text), 0);
+        memset(text, '\0', textSize*sizeof(char));
+        charRead = recv(sock, text, textSize, 0);
 
         if (charRead < 0){
             fprintf(stderr, "Nothing Recieved From Server\n");
         }
 
+        //Print error
         if (strcmp("Error1", text) == 0){
             fprintf(stderr, "ERROR: Refused Connection\n");
             exit(2);
 
+        //Print text
         } else {
 
             i = 0;    

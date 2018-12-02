@@ -5,6 +5,7 @@
  * CS 344
  * ****************/
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,9 +15,11 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+
     /**************************
      * Convert char to defined number
      * **********************/
+
 int findNum(char c){
     
     switch(c){
@@ -51,6 +54,7 @@ int findNum(char c){
     }
 
 }
+
 
     /****************************
      * Find numaric value for ctext and ckey
@@ -106,9 +110,12 @@ char decription(char ctext, char ckey){
         case 26:    return ' ';
     
     }
-
-
 }
+
+
+/*******************************
+ * Server Main
+ * ****************************/
 
 
 int main(int argc, char* argv[]){
@@ -119,10 +126,12 @@ int main(int argc, char* argv[]){
     char *text;
     char *key;
     char *client;
-    char buffer[160000];
+    char buffer[1000];
+    char encMessage[200000];
     char *message;
     int i=0;
     int child;
+    int numListen=0;
     long int textSize;
     long int keySize;
 
@@ -140,6 +149,10 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "ERROR: Not Propper Amount Of Arguments\n");
 
     } else {
+
+        /*************************************
+         * Set Up Server
+         * *********************************/
 
         //Set Up Address Struct
         memset((char*)&serverAddress, '\0', sizeof(serverAddress));
@@ -165,6 +178,7 @@ int main(int argc, char* argv[]){
 
         sizeOfClientInfo = sizeof(clientAddress);
  
+        //Loop
         while((connection = accept(sock, (struct sockaddr *)&clientAddress, &sizeOfClientInfo)) > 0){
 
         
@@ -172,9 +186,11 @@ int main(int argc, char* argv[]){
          * Fork Process
          * Grab Incoming Data From Client
          * Divide up by \n
-         * Remove tailing \n
-         * Open Files
+         * Remove tailling \n
          * ****************************/
+
+        //New child
+        numListen++;
 
         child = fork();
 
@@ -185,6 +201,7 @@ int main(int argc, char* argv[]){
                 charsWritten = send(connection, "ERROR1", strlen("Error1"), 0);
                 break;
 
+
             /****************************
              * Child Process
              * ************************/
@@ -192,23 +209,19 @@ int main(int argc, char* argv[]){
             case 0:
 
             close(sock);
-
-            charsRead = recv(connection, buffer, sizeof(buffer), 0);
-
-            if (charsRead < 0){
-                fprintf(stderr, "ERROR: Unable To Read From The Socket\n");
+            
+            //Grab from client
+            while (encMessage[strlen(encMessage)-1] != 'c'){
+                memset(buffer, '\0', sizeof(buffer));
+                charsRead = recv(connection, buffer, sizeof(buffer) -1, 0);
+                strcat(encMessage, buffer);
             }
-
-            text = strtok(buffer, "\n");
+           
+            //divide up
+            text = strtok(encMessage, "\n");
             key = strtok(NULL, "\n");
             client = strtok(NULL, "\n");
            
-            //test
-            //printf("Servertext: %s\n", text);
-            //printf("Serverkey: %s\n", key);
-            //printf("Serverclient: %s\n", client);
-
-
 
             //Check for correct client
             if (strcmp("dec", client) != 0){
@@ -229,12 +242,12 @@ int main(int argc, char* argv[]){
                 i++;
             }
 
-            //test
-            //printf("Servermessage: %s\n", message);
 
             /**************************
             * Send Message To The Client
             * ***********************/
+
+
             charsWritten = send(connection, message, strlen(message), 0);
 
             //Check charWritten
@@ -254,7 +267,11 @@ int main(int argc, char* argv[]){
             
             close(connection);
             waitpid(child, NULL, 0);
+
+            //Child Finished
+            numListen--;
         }
+
         }
     }
     

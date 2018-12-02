@@ -16,6 +16,9 @@
 #include <ctype.h>
 
 
+/*******************
+ * Client Main
+ * ****************/
 
 int main(int argc, char* argv[]){
 
@@ -28,7 +31,7 @@ int main(int argc, char* argv[]){
     long int keySize;
     struct sockaddr_in serverAddress;
     struct hostent* serverHostInfo;
-    char arg[100000];
+    char arg[200000];
     char text[100000];
     char key[100000];
     FILE *textFile;
@@ -41,7 +44,7 @@ int main(int argc, char* argv[]){
     
     } else {
       
-        //Check for bad characters
+        //Check file
         textFile = fopen(argv[1], "r");
         
         if (textFile == NULL){
@@ -49,12 +52,15 @@ int main(int argc, char* argv[]){
             exit(1);
         }
         
+        //Get size of file
         fseek(textFile, 0L, SEEK_END);
         textSize = ftell(textFile);
         rewind(textFile); 
 
+        //Grab all characters from file
         fgets(text, textSize, textFile); 
  
+        //Check for bad characters
         while (i < strlen(text)){
             if (!isalpha(text[i]) && text[i] != ' '){
                 fprintf(stderr, "ERROR: Bad Character\n");
@@ -64,9 +70,7 @@ int main(int argc, char* argv[]){
             i++;
         }
         
-
-        //Check for text and key being same sized
-
+        //Open Key File
         keyFile = fopen(argv[2], "r");
 
         if (keyFile == NULL){
@@ -74,12 +78,15 @@ int main(int argc, char* argv[]){
             exit(1);
         }
 
+        //Get Key File Size
         fseek(keyFile, 0L, SEEK_END);
         keySize = ftell(keyFile);
         rewind(keyFile);
 
+        //Grab key file chars
         fgets(key, keySize, keyFile);
 
+        //Check if keysize is shorter then text
         if (textSize > keySize -1){
             fprintf(stderr, "ERROR: Key is to short\n");        
             exit(1);
@@ -94,9 +101,12 @@ int main(int argc, char* argv[]){
         strcat(arg, key);
         strcat(arg, "\nenc");
 
+
+
         /***********************
          * Setup the Conection to the server
          * ********************/
+
         memset((char*)&serverAddress, '\0', sizeof(serverAddress));
         port = atoi(argv[3]);
         serverAddress.sin_family = AF_INET;
@@ -115,9 +125,10 @@ int main(int argc, char* argv[]){
             fprintf(stderr, "Unable To Connect To The Server\n");
         }
 
+
         //Send Argument To Server
         charsWritten = send(sock, arg, strlen(arg), 0);
-
+             
         if (charsWritten < 0){
             fprintf(stderr, "Unable To Write To The Server\n");
         }
@@ -131,10 +142,12 @@ int main(int argc, char* argv[]){
             fprintf(stderr, "Nothing Recieved From Server\n");
         }
         
+        //print error
         if (strcmp("Error1", text) == 0){
             fprintf(stderr, "ERROR: Refused Connection\n");
             exit(2);
             
+        //print text    
         } else {
 
             i=0;
