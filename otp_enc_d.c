@@ -72,7 +72,7 @@ char decription(char ctext, char ckey){
 
     i += j;
 
-    if (i > 27) {
+    if (i > 26) {
         i -= 27;
     }
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]){
     char *text;
     char *key;
     char *client;
-    char buffer[3000];
+    char buffer[200000];
     char *encMessage;
     int i=0;
     int child;
@@ -165,17 +165,15 @@ int main(int argc, char* argv[]){
      
         listen(sock, 5);
 
-        while (1){
+        sizeOfClientInfo = sizeof(clientAddress);
+
+        //while (1){
 
         //Accept Connection
-        sizeOfClientInfo = sizeof(clientAddress);
-        connection = accept(sock, (struct sockaddr *)&clientAddress, &sizeOfClientInfo);
-
-        //Check Accept
-        if (connection < 0){
-            fprintf(stderr, "ERROR: Unable To Connect\n");
-        }
- 
+        
+        while((connection = accept(sock, (struct sockaddr *)&clientAddress, &sizeOfClientInfo)) > 0){
+        
+        
 
         /********************************
          * Fork Process
@@ -191,82 +189,41 @@ int main(int argc, char* argv[]){
 
             case -1:
                 fprintf(stderr, "ERROR: Child Process Not Formed\n");
-                exit(1);
+                charsWritten = send(connection, "Error1", strlen("Error1"), 0);
+                break;
 
             /****************************
              * Child Process
              * ************************/
 
             case 0:
+            
+            close(sock);
 
             charsRead = recv(connection, buffer, sizeof(buffer), 0);
 
             if (charsRead < 0){
                 fprintf(stderr, "ERROR: Unable To Read From The Socket\n");
+                
             }
 
             text = strtok(buffer, "\n");
             key = strtok(NULL, "\n");
             client = strtok(NULL, "\n");
-           
-            //printf("text: %s ", text);
-            //printf("key: %s ", key);
-            //printf("client: %s ", client);
-
-
+            
+            //test
+            //printf("ServerText: %s\n", text);
+            //printf("ServerKey: %s\n", key);
+            //printf("Serverclient: %s\n", client);
+            
             //Check for correct client
             if (strcmp("enc", client) != 0){
-                fprintf(stderr, "ERROR: Refused Connection");
+                
+                charsWritten = send(connection, "Error1", strlen("Error1"), 0);
                 exit(2);
             }
 
-            /***************************
-            * Check text and key files
-            * Grab strings
-            * Compare Length (if difference send error)
-            * ************************/
-
-        
-            textFile = fopen(text, "r");
-            keyFile = fopen(key, "r");
-
-            if (textFile == NULL) {
-                fprintf(stderr, "ERROR: Can't Open File\n");
-                exit(1);
-            }
-
-            if (keyFile == NULL) {
-                fprintf(stderr, "ERROR: Can't Open File\n");
-                exit(1);
-            }
-
-            //Find Size of TextFile
-            fseek(textFile, 0L, SEEK_END);
-            textSize = ftell(textFile);
-            rewind(textFile);
-            text = malloc(textSize +1);
-
-            //Find Size of keySize
-            fseek(keyFile, 0L, SEEK_END);
-            keySize = ftell(keyFile);
-            rewind(keyFile);
-            key = malloc(keySize +1);
-
-            fgets(text, textSize, textFile);
-            fgets(key, keySize, keyFile);
-
-            //Close Files
-            fclose(textFile);
-            fclose(keyFile);
-
-            //printf("text: %s textlength: %d", text, strlen(text));
-            //printf("keylength: %d", strlen(key));
-
-            if (strlen(text) != strlen(key) -1){
-                fprintf(stderr, "ERROR: Text and Key are not the same length\n");
-                exit(1);
-            }
-
+            
             encMessage = (char*)malloc(strlen(text));
         
             //Decript Message
@@ -288,6 +245,9 @@ int main(int argc, char* argv[]){
             }
 
             close(connection);
+            exit(0);
+            break;
+            
             
             default:
 
@@ -295,10 +255,13 @@ int main(int argc, char* argv[]){
              * Parent Case
              * ***************/
 
+            close(connection);
             waitpid(child, NULL, 0);
+            
+            
         }
         
-        }
+       }
     }
     
     close(sock);

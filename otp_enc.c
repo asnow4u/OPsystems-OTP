@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <ctype.h>
 
 
 
@@ -23,13 +24,15 @@ int main(int argc, char* argv[]){
     int charsWritten;
     int charRead;
     int i = 0;
-    int textSize;
+    long int textSize;
+    long int keySize;
     struct sockaddr_in serverAddress;
     struct hostent* serverHostInfo;
-    char buffer[3000];
-    char arg[256];
-    char *text;
+    char arg[100000];
+    char text[100000];
+    char key[100000];
     FILE *textFile;
+    FILE *keyFile;
 
 
     //Check for arguments
@@ -48,26 +51,47 @@ int main(int argc, char* argv[]){
         
         fseek(textFile, 0L, SEEK_END);
         textSize = ftell(textFile);
-        rewind(textFile);
-        text = malloc(textSize +1);
+        rewind(textFile); 
 
         fgets(text, textSize, textFile); 
-
+ 
         while (i < strlen(text)){
-            if (!isalnum(text[i]) && text[i] != ' '){
-                fprintf(stderr, "ERROR: Bad Character");
+            if (!isalpha(text[i]) && text[i] != ' '){
+                fprintf(stderr, "ERROR: Bad Character\n");
                 exit(1);
             }
 
             i++;
         }
+        
+
+        //Check for text and key being same sized
+
+        keyFile = fopen(argv[2], "r");
+
+        if (keyFile == NULL){
+            fprintf(stderr, "ERROR: File Does Not Exist\n");
+            exit(1);
+        }
+
+        fseek(keyFile, 0L, SEEK_END);
+        keySize = ftell(keyFile);
+        rewind(keyFile);
+
+        fgets(key, keySize, keyFile);
+
+        if (textSize > keySize -1){
+            fprintf(stderr, "ERROR: Key is to short\n");        
+            exit(1);
+        }
 
         fclose(textFile);
+        fclose(keyFile);
 
         //Set Up Variables
-        strcpy(arg, argv[1]);
+        strcpy(arg, text);
         strcat(arg, "\n");
-        strcat(arg, argv[2]);
+        strcat(arg, key);
         strcat(arg, "\nenc");
 
         /***********************
@@ -107,13 +131,20 @@ int main(int argc, char* argv[]){
             fprintf(stderr, "Nothing Recieved From Server\n");
         }
         
-        i=0;
+        if (strcmp("Error1", text) == 0){
+            fprintf(stderr, "ERROR: Refused Connection\n");
+            exit(2);
+            
+        } else {
+
+            i=0;
         
-        while (i < textSize -1){ 
-            printf("%c", text[i]);
-            i++;
+            while (i < textSize -1){ 
+                printf("%c", text[i]);
+                i++;
+            }
+            printf("\n");
         }
-        printf("\n");
     }
 
     close(sock);

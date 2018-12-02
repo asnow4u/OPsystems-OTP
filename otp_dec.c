@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
+#include <ctype.h>
 
 
 int main(int argc, char* argv[]){
@@ -23,13 +23,15 @@ int main(int argc, char* argv[]){
     int charsWritten;
     int charRead;
     int i = 0;
-    int textSize;
+    long int textSize;
+    long int keySize;
     struct sockaddr_in serverAddress;
     struct hostent* serverHostInfo;
-    char arg[256];
-    char buffer[256];
-    char *text;
+    char arg[80000];
+    char text[80000];
+    char key[80000];
     FILE *textFile;
+    FILE *keyFile;
 
 
     //Check for arguments
@@ -49,26 +51,55 @@ int main(int argc, char* argv[]){
         fseek(textFile, 0L, SEEK_END);
         textSize = ftell(textFile);
         rewind(textFile);
-        text = malloc(textSize +1);
 
-        fgets(text, sizeof(text), textFile);
-
-        while (i < strlen(text) -1){
-            if (!isalnum(text[i]) && text[i] != ' '){
-                fprintf(stderr, "ERROR: Bad Character");
+        fgets(text, textSize, textFile); 
+        
+        //Check for bad characters
+        while (i < strlen(text)){
+            if (!isalpha(text[i]) && text[i] != ' '){
+                fprintf(stderr, "ERROR: Bad Character\n");
                 exit(1);
             }
 
             i++;
         }
+        
 
+        //Open Key File
+        keyFile = fopen(argv[2], "r");
+
+        if (keyFile == NULL){
+            fprintf(stderr, "ERROR: File Does Not Exist\n");
+            exit(1);
+        }
+
+        fseek(keyFile, 0L, SEEK_END);
+        keySize = ftell(keyFile);
+        rewind(keyFile);
+
+        fgets(key, keySize, keyFile);
+
+        //test
+        //printf("text: %s\n", text);
+        //printf("key: %s\n", key);
+
+        //Check if keysize is shorter than text
+        if (textSize > keySize -1){
+            fprintf(stderr, "ERROR: Key is to short");
+            exit(1);
+        }
+
+        fclose(keyFile);
         fclose(textFile);
 
         //Set Up Variables
-        strcpy(arg, argv[1]);
+        strcpy(arg, text);
         strcat(arg, "\n");
-        strcat(arg, argv[2]);
+        strcat(arg, key);
         strcat(arg, "\ndec");
+
+        //test
+        //printf("arg: %s", arg);
 
         /**********************
          *Set Up Connection To Server
@@ -102,17 +133,25 @@ int main(int argc, char* argv[]){
 
 
         //Recv Encripted Message From Server
-        memset(text, '\0', textSize * sizeof(char));
-        charRead = recv(sock, text, sizeof(buffer), 0);
+        memset(text, '\0', sizeof(text));
+        charRead = recv(sock, text, sizeof(text), 0);
 
         if (charRead < 0){
             fprintf(stderr, "Nothing Recieved From Server\n");
         }
 
-        i = 0;    
-        while (i < textSize -1){
-            printf("%c", text[i]);
-            i++;
+        if (strcmp("Error1", text) == 0){
+            fprintf(stderr, "ERROR: Refused Connection\n");
+            exit(2);
+
+        } else {
+
+            i = 0;    
+            while (i < textSize -1){
+                printf("%c", text[i]);
+                i++;
+            }
+            printf("\n");
         }
     }
 
